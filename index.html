@@ -81,14 +81,18 @@
 </div>
 
 <script>
+// 🔗 YOUR ENDPOINTS
+const PRODUCTS_API_URL = "https://script.google.com/macros/s/AKfycbwDSDeQNzeFHWBYH3CL6ScnBJweWgUkFyceQSepMQWTZB7MGaIFi_EqaMIkf2NKFbg3/exec";
+const GPT_BACKEND_URL  = "https://script.google.com/macros/s/AKfycbzerkNn7GThDFGVo1MW2iLVQd2_8UqtO6KQ81LLrSVrotnlIpRnkw6_1RoEMyXuMIjS/exec";
+
 let productData = [];
 
 // 1️⃣ Load your product data from the sheet API
 window.onload = function() {
-    fetch("https://script.google.com/macros/s/AKfycbwDSDeQNzeFHWBYH3CL6ScnBJweWgUkFyceQSepMQWTZB7MGaIFi_EqaMIkf2NKFbg3/exec")
+    fetch(PRODUCTS_API_URL)
         .then(r => r.json())
         .then(data => {
-            // Handle either: [ ... ] or { data: [ ... ] }
+            // Support both: [ ... ] or { data: [ ... ] }
             productData = Array.isArray(data) ? data : (data.data || []);
             addBot("Loaded " + productData.length + " products! Ask anything about them.");
             console.log("Loaded products:", productData);
@@ -102,7 +106,7 @@ window.onload = function() {
             ];
         });
 
-    // Attach Enter listener after page load
+    // Allow Enter key to send
     document.getElementById("userInput").addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
             sendMessage();
@@ -116,7 +120,7 @@ function addBot(text) {
 
     let formatted = text || "";
 
-    // Clean up some markdown-ish patterns
+    // Clean up some markdown patterns
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1'); // remove **bold**
     formatted = formatted.replace(/\n\d+\.\s/g, '\n• ');   // "1. " → "• "
     formatted = formatted.replace(/\n-\s/g, '\n• ');       // "- " → "• "
@@ -124,7 +128,7 @@ function addBot(text) {
     // Escape HTML then convert newlines to <br>
     formatted = formatted
         .replace(/&/g, "&amp;")
-        .replace(/<//g, "&lt;")
+        .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/\n/g, "<br>");
 
@@ -154,9 +158,9 @@ async function sendMessage() {
     addBot("Thinking...");
 
     try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbzerkNn7GThDFGVo1MW2iLVQd2_8UqtO6KQ81LLrSVrotnlIpRnkw6_1RoEMyXuMIjS/exec", {
+        const response = await fetch(GPT_BACKEND_URL, {
             method: "POST",
-            // No custom headers → avoids CORS preflight issues with Apps Script
+            // ⚠️ No custom headers → avoids CORS preflight with Apps Script
             body: JSON.stringify({
                 message: text,
                 productData: productData
@@ -166,21 +170,23 @@ async function sendMessage() {
         const data = await response.json();
         console.log("Backend response:", data);
 
-        // Remove the "Thinking..." bubble
-        document.querySelector(".msg.bot:last-child").remove();
+        // Remove the "Thinking..." bubble safely
+        const lastBot = document.querySelector(".msg.bot:last-child");
+        if (lastBot) lastBot.remove();
 
         if (data.error) {
             addBot("❌ Error: " + data.error);
             return;
         }
 
-        // Our GPT Apps Script backend returns { success, response, ... }
+        // Backend should return: { success: true, response: "..." }
         const answer = data.response || "I couldn't generate a reply.";
         addBot(answer);
 
     } catch (err) {
         console.error("Chat error:", err);
-        document.querySelector(".msg.bot:last-child").remove();
+        const lastBot = document.querySelector(".msg.bot:last-child");
+        if (lastBot) lastBot.remove();
         addBot("❌ Network or server error: " + err.message);
     }
 }
