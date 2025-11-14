@@ -81,21 +81,22 @@
 </div>
 
 <script>
-// 🔗 YOUR ENDPOINTS
+// 🔗 APIs
 const PRODUCTS_API_URL = "https://script.google.com/macros/s/AKfycbwDSDeQNzeFHWBYH3CL6ScnBJweWgUkFyceQSepMQWTZB7MGaIFi_EqaMIkf2NKFbg3/exec";
 const GPT_BACKEND_URL  = "https://script.google.com/macros/s/AKfycbzerkNn7GThDFGVo1MW2iLVQd2_8UqtO6KQ81LLrSVrotnlIpRnkw6_1RoEMyXuMIjS/exec";
 
 let productData = [];
 
-// 1️⃣ Load your product data from the sheet API
+// 1️⃣ Load product data
 window.onload = function() {
     fetch(PRODUCTS_API_URL)
         .then(r => r.json())
         .then(data => {
-            // Support both: [ ... ] or { data: [ ... ] }
-            productData = Array.isArray(data) ? data : (data.data || []);
-            addBot("Loaded " + productData.length + " products! Ask anything about them.");
-            console.log("Loaded products:", productData);
+            // Keep data as-is; backend will handle 2D or objects
+            productData = data;
+            let count = Array.isArray(data) ? data.length : 0;
+            addBot("Loaded " + count + " product rows from sheet. Ask anything about them.");
+            console.log("Loaded productData:", productData);
         })
         .catch((err) => {
             console.error("Product load error:", err);
@@ -106,7 +107,7 @@ window.onload = function() {
             ];
         });
 
-    // Allow Enter key to send
+    // Enter key handler
     document.getElementById("userInput").addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
             sendMessage();
@@ -120,7 +121,7 @@ function addBot(text) {
 
     let formatted = text || "";
 
-    // Clean up some markdown patterns
+    // Clean some markdown-ish patterns
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1'); // remove **bold**
     formatted = formatted.replace(/\n\d+\.\s/g, '\n• ');   // "1. " → "• "
     formatted = formatted.replace(/\n-\s/g, '\n• ');       // "- " → "• "
@@ -146,7 +147,7 @@ function addUser(text) {
     box.scrollTop = box.scrollHeight;
 }
 
-// 2️⃣ Send user question + product data to your GPT backend
+// 2️⃣ Send user question + product data to GPT backend
 async function sendMessage() {
     const input = document.getElementById("userInput");
     const text = input.value.trim();
@@ -160,27 +161,44 @@ async function sendMessage() {
     try {
         const response = await fetch(GPT_BACKEND_URL, {
             method: "POST",
-            // ⚠️ No custom headers → avoids CORS preflight with Apps Script
+            // ❗ Important: no custom headers, Apps Script doesn't like CORS preflight
             body: JSON.stringify({
                 message: text,
                 productData: productData
             })
         });
 
-        const data = await response.json();
-        console.log("Backend response:", data);
+        const rawText = await response.text();
+        console.log("Raw backend response:", rawText);
 
-        // Remove the "Thinking..." bubble safely
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (e) {
+            // Remove "Thinking..."
+            const lastBot = document.querySelector(".msg.bot:last-child");
+            if (lastBot) lastBot.remove();
+            addBot("❌ Backend did not return valid JSON.\n\n" + rawText);
+            return;
+        }
+
+        // Remove "Thinking..."
         const lastBot = document.querySelector(".msg.bot:last-child");
         if (lastBot) lastBot.remove();
 
         if (data.error) {
-            addBot("❌ Error: " + data.error);
+            addBot("❌ Error from server: " + data.error);
             return;
         }
 
-        // Backend should return: { success: true, response: "..." }
-        const answer = data.response || "I couldn't generate a reply.";
+        // Try common fields; fallback to printing JSON
+        const answer =
+            data.response ||
+            data.reply ||
+            data.output ||
+            data.message ||
+            JSON.stringify(data, null, 2);
+
         addBot(answer);
 
     } catch (err) {
