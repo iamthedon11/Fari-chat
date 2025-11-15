@@ -66,7 +66,7 @@
         font-weight: bold;
     }
 
-    /* Nicer dropdown styling */
+    /* (Left in case you later switch back to <details> style) */
     details {
         margin-bottom: 8px;
         background: #f8fafc;
@@ -150,7 +150,7 @@ function addBot(text) {
     // Remove markdown **bold** if GPT ever sends it
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1');
 
-    // ❗ Allow HTML like <details>, <summary>, but block scripts
+    // Allow plain text + newlines, but block scripts
     formatted = formatted
         .replace(/<script/gi, "&lt;script")
         .replace(/<\/script/gi, "&lt;/script")
@@ -188,7 +188,7 @@ async function sendMessage() {
             body: JSON.stringify({
                 message: text,
                 productData: productData,
-                sessionId: SESSION_ID   // 🔥 this enables context in backend
+                sessionId: SESSION_ID   // enables context in backend
             })
         });
 
