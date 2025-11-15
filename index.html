@@ -65,6 +65,22 @@
         cursor: pointer;
         font-weight: bold;
     }
+
+    /* Optional: nicer dropdown styling */
+    details {
+        margin-bottom: 8px;
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+    }
+    details summary {
+        cursor: pointer;
+        font-weight: 600;
+    }
+    details[open] {
+        background: #eef2ff;
+    }
 </style>
 </head>
 <body>
@@ -131,16 +147,15 @@ function addBot(text) {
 
     let formatted = text || "";
 
-    // Clean some markdown-ish patterns
+    // Clean some markdown-ish patterns (optional)
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1'); // remove **bold**
     formatted = formatted.replace(/\n\d+\.\s/g, '\n• ');   // "1. " → "• "
     formatted = formatted.replace(/\n-\s/g, '\n• ');       // "- " → "• "
 
-    // Escape HTML then convert newlines to <br>
+    // ❗ Allow HTML like <details>, <summary>, but block scripts
     formatted = formatted
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
+        .replace(/<script/gi, "&lt;script")
+        .replace(/<\/script/gi, "&lt;/script")
         .replace(/\n/g, "<br>");
 
     box.innerHTML += `<div class="msg bot">${formatted}</div>`;
@@ -189,7 +204,7 @@ async function sendMessage() {
             // Remove "Thinking..."
             const lastBot = document.querySelector(".msg.bot:last-child");
             if (lastBot) lastBot.remove();
-            addBot("❌ Backend did not return valid JSON.\n\n" + rawText);
+            addBot("❌ Backend did not return valid JSON.<br><br>" + rawText);
             return;
         }
 
