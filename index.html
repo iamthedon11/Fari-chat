@@ -2,560 +2,511 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>fArI Genie - Smart Product Assistant</title>
+<title>fArI Genie – Product Chatbot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+  :root{
+    --bg:#0f172a;
+    --card:#ffffff;
+    --accent:#6366f1;
+    --accent-soft:#eef2ff;
+    --accent-dark:#4f46e5;
+    --border:#e5e7eb;
+    --text:#0f172a;
+    --muted:#6b7280;
+    --bot:#e0e7ff;
+    --user:#6366f1;
+  }
+  *{
+    box-sizing:border-box;
+  }
+  body{
+    margin:0;
+    font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #020617 100%);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .shell{
+    width:100%;
+    max-width:1100px;
+    display:grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
+    gap:18px;
+  }
+  @media (max-width:900px){
+    .shell{
+      grid-template-columns: minmax(0, 1fr);
     }
-    
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-    }
-    
-    .container {
-        width: 100%;
-        max-width: 900px;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        height: 90vh;
-        max-height: 700px;
-    }
-    
-    .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 20px 25px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .header h1 {
-        font-size: 24px;
-        font-weight: 600;
-    }
-    
-    .status {
-        margin-left: auto;
-        font-size: 12px;
-        padding: 5px 12px;
-        background: rgba(255,255,255,0.2);
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #4ade80;
-        animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    
-    .chat-box {
-        flex: 1;
-        overflow-y: auto;
-        padding: 25px;
-        background: #f8fafc;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .chat-box::-webkit-scrollbar {
-        width: 6px;
-    }
-    
-    .chat-box::-webkit-scrollbar-track {
-        background: #f1f1f1;
-    }
-    
-    .chat-box::-webkit-scrollbar-thumb {
-        background: #667eea;
-        border-radius: 3px;
-    }
-    
-    .message-wrapper {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        animation: slideIn 0.3s ease-out;
-    }
-    
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .message-wrapper.user-wrapper {
-        flex-direction: row-reverse;
-    }
-    
-    .avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        flex-shrink: 0;
-    }
-    
-    .avatar.bot {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    .avatar.user {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-    
-    .msg {
-        padding: 12px 16px;
-        border-radius: 16px;
-        max-width: 75%;
-        line-height: 1.6;
-        word-wrap: break-word;
-        white-space: pre-wrap;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .msg.bot {
-        background: white;
-        color: #1e293b;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .msg.user {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    .typing-indicator {
-        display: flex;
-        gap: 4px;
-        padding: 12px 16px;
-        background: white;
-        border-radius: 16px;
-        width: fit-content;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .typing-indicator span {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #667eea;
-        animation: typing 1.4s infinite;
-    }
-    
-    .typing-indicator span:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-    
-    .typing-indicator span:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-    
-    @keyframes typing {
-        0%, 60%, 100% { transform: translateY(0); }
-        30% { transform: translateY(-10px); }
-    }
-    
-    .input-area {
-        padding: 20px 25px;
-        background: white;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        gap: 12px;
-    }
-    
-    .input-wrapper {
-        flex: 1;
-        position: relative;
-    }
-    
-    input {
-        width: 100%;
-        padding: 14px 20px;
-        border-radius: 25px;
-        border: 2px solid #e2e8f0;
-        font-size: 15px;
-        transition: all 0.3s ease;
-        outline: none;
-    }
-    
-    input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    
-    input:disabled {
-        background: #f1f5f9;
-        cursor: not-allowed;
-    }
-    
-    button {
-        padding: 14px 28px;
-        border: none;
-        border-radius: 25px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 15px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    button:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-    }
-    
-    button:active:not(:disabled) {
-        transform: translateY(0);
-    }
-    
-    button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-    }
-    
-    .welcome-screen {
-        text-align: center;
-        padding: 40px 20px;
-        color: #64748b;
-    }
-    
-    .welcome-screen h2 {
-        color: #1e293b;
-        margin-bottom: 15px;
-        font-size: 28px;
-    }
-    
-    .welcome-screen p {
-        margin-bottom: 30px;
-        font-size: 16px;
-    }
-    
-    .suggestions {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        max-width: 500px;
-        margin: 0 auto;
-    }
-    
-    .suggestion-chip {
-        padding: 12px 20px;
-        background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: left;
-    }
-    
-    .suggestion-chip:hover {
-        border-color: #667eea;
-        transform: translateX(5px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-    }
-    
-    .error-message {
-        background: #fee2e2;
-        color: #991b1b;
-        padding: 12px 16px;
-        border-radius: 12px;
-        border-left: 4px solid #dc2626;
-    }
-    
-    @media (max-width: 768px) {
-        .container {
-            height: 100vh;
-            max-height: 100vh;
-            border-radius: 0;
-        }
-        
-        .msg {
-            max-width: 85%;
-        }
-        
-        .header h1 {
-            font-size: 20px;
-        }
-    }
+  }
+  .panel{
+    background:var(--card);
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(15,23,42,.55);
+    border:1px solid rgba(148,163,184,0.35);
+    overflow:hidden;
+  }
+  .chat-header{
+    padding:14px 18px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:linear-gradient(120deg,#111827,#1e293b);
+    color:#e5e7eb;
+  }
+  .chat-header-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .avatar{
+    width:34px;
+    height:34px;
+    border-radius:999px;
+    background:radial-gradient(circle at 30% 0,#fbbf24,#f97316 50%,#4f46e5 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-weight:700;
+    font-size:18px;
+  }
+  .chat-title{
+    font-size:15px;
+    font-weight:600;
+  }
+  .chat-sub{
+    font-size:11px;
+    color:#9ca3af;
+  }
+  .chip-status{
+    padding:3px 8px;
+    border-radius:999px;
+    font-size:11px;
+    border:1px solid rgba(148,163,184,.6);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .dot{
+    width:8px;
+    height:8px;
+    border-radius:999px;
+    background:#22c55e;
+    box-shadow:0 0 0 4px rgba(34,197,94,0.25);
+  }
+
+  .chat-body{
+    height:520px;
+    display:flex;
+    flex-direction:column;
+  }
+  .chat-box{
+    flex:1;
+    overflow-y:auto;
+    padding:16px 18px 8px;
+    background:#f9fafb;
+  }
+  .msg{
+    max-width:78%;
+    padding:10px 13px;
+    border-radius:14px;
+    margin-bottom:10px;
+    line-height:1.45;
+    font-size:14px;
+    white-space:pre-wrap;
+    word-wrap:break-word;
+  }
+  .bot{
+    background:var(--bot);
+    color:#111827;
+    border-bottom-left-radius:4px;
+  }
+  .user{
+    background:var(--user);
+    color:white;
+    margin-left:auto;
+    border-bottom-right-radius:4px;
+  }
+  .msg-meta{
+    font-size:10px;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+
+  .input-wrap{
+    padding:10px 14px 14px;
+    border-top:1px solid var(--border);
+    background:#f3f4f6;
+  }
+  .input-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  .chat-input{
+    flex:1;
+    padding:11px 12px;
+    border-radius:999px;
+    border:1px solid #d1d5db;
+    font-size:14px;
+    outline:none;
+    transition:.15s border, .15s box-shadow, .15s background;
+    background:white;
+  }
+  .chat-input:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px rgba(99,102,241,.5);
+    background:#f9fafb;
+  }
+  button{
+    border:none;
+    border-radius:999px;
+    padding:10px 16px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    background:var(--accent);
+    color:white;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    box-shadow:0 10px 25px rgba(79,70,229,.45);
+  }
+  button:hover{
+    background:var(--accent-dark);
+    transform:translateY(-1px);
+  }
+  button:active{
+    transform:translateY(0);
+    box-shadow:0 4px 16px rgba(79,70,229,.3);
+  }
+
+  .typing{
+    display:inline-flex;
+    gap:4px;
+    align-items:center;
+  }
+  .typing span{
+    width:5px;
+    height:5px;
+    border-radius:999px;
+    background:#4b5563;
+    animation:typing 1s infinite ease-in-out;
+  }
+  .typing span:nth-child(2){ animation-delay: .12s; }
+  .typing span:nth-child(3){ animation-delay: .24s; }
+  @keyframes typing{
+    0%,80%,100%{ transform:translateY(0); opacity:.5; }
+    40%{ transform:translateY(-3px); opacity:1; }
+  }
+
+  /* Right side panel */
+  .side-header{
+    padding:14px 18px 8px;
+    border-bottom:1px solid var(--border);
+  }
+  .side-title{
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .side-sub{
+    font-size:12px;
+    color:var(--muted);
+  }
+  .side-body{
+    padding:10px 14px 14px;
+    font-size:13px;
+  }
+
+  .pill-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .pill{
+    padding:5px 10px;
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    cursor:pointer;
+    font-size:11px;
+    color:#374151;
+  }
+  .pill:hover{
+    background:#eef2ff;
+    border-color:#c7d2fe;
+  }
+  .hint-block{
+    margin-top:10px;
+    padding:10px 10px;
+    border-radius:10px;
+    background:#f9fafb;
+    border:1px dashed #e5e7eb;
+  }
+  .hint-block strong{
+    font-size:12px;
+  }
+  .hint-block ul{
+    padding-left:18px;
+    margin:6px 0 0;
+  }
+  .hint-block li{
+    margin-bottom:4px;
+  }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    padding:3px 7px;
+    font-size:10px;
+    color:#4b5563;
+    background:#f9fafb;
+    margin-top:8px;
+  }
 </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <div>🧞</div>
-        <h1>fArI Genie</h1>
-        <div class="status">
-            <div class="status-dot"></div>
-            <span id="statusText">Online</span>
+<div class="shell">
+
+  <!-- LEFT: CHAT PANEL -->
+  <div class="panel">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="avatar">f</div>
+        <div>
+          <div class="chat-title">fArI Genie – Product Chatbot</div>
+          <div class="chat-sub">Understands price, sales count, brands, racks, and more.</div>
         </div>
+      </div>
+      <div class="chip-status">
+        <div class="dot"></div>
+        Live sheet · GPT powered
+      </div>
     </div>
 
-    <div class="chat-box" id="chatBox">
-        <div class="welcome-screen">
-            <h2>Welcome to fArI Genie! 👋</h2>
-            <p>I'm your intelligent shopping assistant. Ask me anything about products!</p>
-            <div class="suggestions">
-                <div class="suggestion-chip" onclick="sendPredefined('Show me kitchen racks under 5000')">
-                    🍳 Show me kitchen racks under 5000
-                </div>
-                <div class="suggestion-chip" onclick="sendPredefined('Give me top 5 best selling products')">
-                    🏆 Give me top 5 best selling products
-                </div>
-                <div class="suggestion-chip" onclick="sendPredefined('What electronics do you have?')">
-                    📱 What electronics do you have?
-                </div>
-            </div>
-        </div>
-    </div>
+    <div class="chat-body">
+      <div class="chat-box" id="chatBox"></div>
 
-    <div class="input-area">
-        <div class="input-wrapper">
-            <input id="userInput" placeholder="Ask about products... (e.g., 'show me racks above 3000')" autocomplete="off">
+      <div class="input-wrap">
+        <div class="input-row">
+          <input id="userInput" class="chat-input" placeholder='Try: "give me 3 racks above 3000 with sales count above 50"' />
+          <button onclick="sendMessage()">
+            <span>Send</span>
+            <span>➤</span>
+          </button>
         </div>
-        <button id="sendBtn" onclick="sendMessage()">Send</button>
+      </div>
     </div>
+  </div>
+
+  <!-- RIGHT: HINTS / STATUS PANEL -->
+  <div class="panel">
+    <div class="side-header">
+      <div class="side-title">How to talk to your product brain 🧠</div>
+      <div class="side-sub">
+        Data comes from your Google Sheet (including Product ID). GPT only re-ranks and explains.
+      </div>
+    </div>
+    <div class="side-body">
+      <div class="pill-row">
+        <div class="pill" onclick="quickAsk('give me 3 racks above 3000 with sales count above 50')">
+          3 racks > 3000 &amp; sold &gt; 50
+        </div>
+        <div class="pill" onclick="quickAsk('top 5 sandwich makers by sales')">
+          Top 5 sandwich makers
+        </div>
+        <div class="pill" onclick="quickAsk('best selling samsung phones between 50000 and 150000')">
+          Samsung 50k–150k
+        </div>
+        <div class="pill" onclick="quickAsk('electronics sorted by seller name')">
+          Electronics by seller name
+        </div>
+      </div>
+
+      <div class="hint-block">
+        <strong>Examples I understand:</strong>
+        <ul>
+          <li><code>give me 5 racks above 3000 with sales count above 50</code></li>
+          <li><code>top 10 products from pettah online shop with highest sales</code></li>
+          <li><code>show me samsung phones between 50k and 150k</code></li>
+          <li><code>show best selling items by seller name</code></li>
+        </ul>
+      </div>
+
+      <div class="badge">
+        <span>ℹ️</span>
+        Sheet rows (incl. Product ID) are sent to the GPT backend. GPT never invents prices/sales.
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-// 🔗 Your Google Apps Script Web App URL (Updated GPT Backend)
-const GPT_BACKEND_URL = "https://script.google.com/macros/s/AKfycbyDriuYKArhp6TVHszP_Wcv9eLQAGzsAlXlCLECYX2XQDaNT46oOBHdNCBd1-scbSPsUw/exec";
+// 🔗 APIs
+// 👉 Products API (returns JSON from your sheet, including Product ID, price, sold, seller, etc.)
+const PRODUCTS_API_URL = "https://script.google.com/macros/s/AKfycbwDSDeQNzeFHWBYH3CL6ScnBJweWgUkFyceQSepMQWTZB7MGaIFi_EqaMIkf2NKFbg3/exec";
 
-// 🔑 Session ID for conversation context
+// 👉 GPT backend (Apps Script web app that runs the chat logic – replace with your deployed URL)
+const GPT_BACKEND_URL  = "https://script.google.com/macros/s/AKfycbyDriuYKArhp6TVHszP_Wcv9eLQAGzsAlXlCLECYX2XQDaNT46oOBHdNCBd1-scbSPsUw/exec";
+
+// Global products (includes Product ID etc.)
+let productData = [];
+
+// Simple per-browser session ID for context (used by backend)
 let SESSION_ID = (function () {
-    const KEY = "daraz_chatbot_session_id";
-    let existing = localStorage.getItem(KEY);
-    if (existing) return existing;
-    const newId = "sess_" + Date.now() + "_" + Math.random().toString(16).slice(2);
-    localStorage.setItem(KEY, newId);
-    return newId;
+  const KEY = "daraz_chatbot_session_id";
+  let existing = localStorage.getItem(KEY);
+  if (existing) return existing;
+  const newId = "sess_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+  localStorage.setItem(KEY, newId);
+  return newId;
 })();
 
-let isFirstMessage = true;
+const chatBox = document.getElementById("chatBox");
+const userInput = document.getElementById("userInput");
 
-// Initialize on page load
+/* ------------- UI Helpers --------------- */
+
+function scrollToBottom() {
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addBot(text) {
+  let formatted = text || "";
+  // Strip markdown ** ** if any
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1');
+
+  const msg = document.createElement("div");
+  msg.className = "msg bot";
+  msg.innerText = formatted; // trusted text from backend; no HTML injection
+  chatBox.appendChild(msg);
+  scrollToBottom();
+}
+
+function addUser(text) {
+  const msg = document.createElement("div");
+  msg.className = "msg user";
+  msg.innerText = text;
+  chatBox.appendChild(msg);
+  scrollToBottom();
+}
+
+function addTyping() {
+  const msg = document.createElement("div");
+  msg.className = "msg bot";
+  msg.id = "typing-indicator";
+  msg.innerHTML = `
+    <div class="typing">
+      <span></span><span></span><span></span>
+    </div>`;
+  chatBox.appendChild(msg);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById("typing-indicator");
+  if (el) el.remove();
+}
+
+/* ------------- Quick ask helper --------------- */
+function quickAsk(text) {
+  userInput.value = text;
+  sendMessage();
+}
+
+/* ------------- Load products on startup --------------- */
 window.onload = function() {
-    // Enter key handler
-    document.getElementById("userInput").addEventListener("keydown", function(e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
+  addBot("Hi, I’m fArI Genie 👋 Loading your product sheet now...");
+
+  fetch(PRODUCTS_API_URL)
+    .then(r => r.json())
+    .then(data => {
+      productData = data;
+      let count = Array.isArray(data) ? data.length : 0;
+      addBot("Loaded " + count + " product rows from your sheet. Ask me for racks, sandwich makers, brands, sellers, and more.");
+      console.log("Loaded productData:", productData);
+    })
+    .catch(err => {
+      console.error("Product load error:", err);
+      addBot("⚠️ I couldn’t load the live product sheet. Using a tiny demo dataset instead.");
+      productData = [
+        { "Product ID": "DEMO1", "Product Name": "Samsung A54", "Price": "100000", "Sold Count": "120", "Seller": "Demo Store" },
+        { "Product ID": "DEMO2", "Product Name": "Nike Running Shoes", "Price": "15000", "Sold Count": "85", "Seller": "Demo Store" }
+      ];
     });
-    
-    // Focus input
-    document.getElementById("userInput").focus();
+
+  // Enter to send
+  userInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  });
 };
 
-// Clear welcome screen on first message
-function clearWelcome() {
-    if (isFirstMessage) {
-        document.getElementById("chatBox").innerHTML = '';
-        isFirstMessage = false;
-    }
-}
-
-// Add bot message with avatar
-function addBot(text) {
-    clearWelcome();
-    const box = document.getElementById("chatBox");
-    
-    // Basic formatting
-    let formatted = text || "";
-    formatted = formatted
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/<script/gi, "&lt;script")
-        .replace(/<\/script/gi, "&lt;/script");
-    
-    const wrapper = document.createElement('div');
-    wrapper.className = 'message-wrapper bot-wrapper';
-    wrapper.innerHTML = `
-        <div class="avatar bot">🧞</div>
-        <div class="msg bot">${formatted}</div>
-    `;
-    
-    box.appendChild(wrapper);
-    box.scrollTop = box.scrollHeight;
-}
-
-// Add user message with avatar
-function addUser(text) {
-    clearWelcome();
-    const box = document.getElementById("chatBox");
-    
-    const safe = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    
-    const wrapper = document.createElement('div');
-    wrapper.className = 'message-wrapper user-wrapper';
-    wrapper.innerHTML = `
-        <div class="avatar user">👤</div>
-        <div class="msg user">${safe}</div>
-    `;
-    
-    box.appendChild(wrapper);
-    box.scrollTop = box.scrollHeight;
-}
-
-// Show typing indicator
-function showTyping() {
-    clearWelcome();
-    const box = document.getElementById("chatBox");
-    const wrapper = document.createElement('div');
-    wrapper.className = 'message-wrapper bot-wrapper';
-    wrapper.id = 'typing-indicator';
-    wrapper.innerHTML = `
-        <div class="avatar bot">🧞</div>
-        <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    `;
-    box.appendChild(wrapper);
-    box.scrollTop = box.scrollHeight;
-}
-
-// Remove typing indicator
-function hideTyping() {
-    const typing = document.getElementById('typing-indicator');
-    if (typing) typing.remove();
-}
-
-// Enable/disable input
-function setSending(state) {
-    const btn = document.getElementById("sendBtn");
-    const input = document.getElementById("userInput");
-    btn.disabled = state;
-    input.disabled = state;
-    
-    document.getElementById("statusText").textContent = state ? "Thinking..." : "Online";
-}
-
-// Send predefined message (from suggestion chips)
-function sendPredefined(text) {
-    document.getElementById("userInput").value = text;
-    sendMessage();
-}
-
-// Main send message function
+/* ------------- Send message to GPT backend --------------- */
 async function sendMessage() {
-    const input = document.getElementById("userInput");
-    const text = input.value.trim();
-    if (!text) return;
+  const text = userInput.value.trim();
+  if (!text) return;
 
-    addUser(text);
-    input.value = "";
-    
-    showTyping();
-    setSending(true);
+  addUser(text);
+  userInput.value = "";
+  addTyping();
 
+  try {
+    const response = await fetch(GPT_BACKEND_URL, {
+      method: "POST",
+      // ❗ No custom headers; keeps Apps Script CORS happy
+      body: JSON.stringify({
+        message: text,
+        productData: productData, // includes Product ID, price, sold count, seller, etc.
+        sessionId: SESSION_ID
+      })
+    });
+
+    const rawText = await response.text();
+    console.log("Raw backend response:", rawText);
+
+    let data;
     try {
-        // Google Apps Script requires specific fetch configuration
-        const response = await fetch(GPT_BACKEND_URL, {
-            method: "POST",
-            redirect: "follow", // Important for Apps Script redirects
-            body: JSON.stringify({
-                message: text,
-                sessionId: SESSION_ID
-                // No productData - backend reads from sheet automatically!
-            })
-        });
-
-        // Check if response is ok
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const rawText = await response.text();
-        console.log("Raw backend response:", rawText);
-
-        let data;
-        try {
-            data = JSON.parse(rawText);
-        } catch (e) {
-            hideTyping();
-            setSending(false);
-            addBot("❌ Sorry, I received an invalid response. Please try again.\n\nResponse: " + rawText.substring(0, 200));
-            console.error("JSON parse error:", e, rawText);
-            return;
-        }
-
-        hideTyping();
-        setSending(false);
-
-        if (!data.success || data.error) {
-            addBot("❌ Error: " + (data.error || "Something went wrong"));
-            return;
-        }
-
-        // Display the response
-        const answer = data.response || "I couldn't generate a response.";
-        addBot(answer);
-
-        // Log metadata for debugging
-        if (data.meta) {
-            console.log("Query metadata:", data.meta);
-        }
-
-    } catch (err) {
-        console.error("Chat error:", err);
-        hideTyping();
-        setSending(false);
-        
-        // More specific error messages
-        let errorMsg = "❌ Connection Error\n\n";
-        if (err.message.includes("Failed to fetch")) {
-            errorMsg += "Cannot reach the server. This could be due to:\n\n";
-            errorMsg += "1. Your Google Apps Script is not deployed as a Web App\n";
-            errorMsg += "2. The deployment URL is incorrect\n";
-            errorMsg += "3. The script doesn't have proper permissions\n\n";
-            errorMsg += "Please check your deployment settings.";
-        } else {
-            errorMsg += err.message;
-        }
-        
-        addBot(errorMsg);
+      data = JSON.parse(rawText);
+    } catch (e) {
+      removeTyping();
+      addBot("❌ Backend did not return valid JSON.\n\n" + rawText);
+      return;
     }
+
+    removeTyping();
+
+    if (data.error) {
+      addBot("❌ Error from server: " + data.error);
+      return;
+    }
+
+    const answer =
+      data.response ||
+      data.reply ||
+      data.output ||
+      data.message ||
+      JSON.stringify(data, null, 2);
+
+    addBot(answer);
+
+  } catch (err) {
+    console.error("Chat error:", err);
+    removeTyping();
+    addBot("❌ Network or server error: " + err.message);
+  }
 }
 </script>
 
