@@ -35,6 +35,8 @@
         margin-bottom: 12px;
         max-width: 75%;
         line-height: 1.4;
+        word-wrap: break-word;
+        white-space: pre-wrap;
     }
     .bot {
         background: #e3e8ff;
@@ -65,8 +67,12 @@
         cursor: pointer;
         font-weight: bold;
     }
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 
-    /* (Left in case you later switch back to <details> style) */
+    /* Optional: left a details style in case you ever output <details> later */
     details {
         margin-bottom: 8px;
         background: #f8fafc;
@@ -91,14 +97,14 @@
     <div class="chat-box" id="chatBox"></div>
 
     <div class="input-area">
-        <input id="userInput" placeholder="Ask about products...">
-        <button onclick="sendMessage()">Send</button>
+        <input id="userInput" placeholder="Ask about products... (e.g. &quot;3 racks above 3000 with sales count above 50&quot;)">
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
 </div>
 
 <script>
 // 🔗 APIs
-const PRODUCTS_API_URL = "https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLg6rSC-KfscHViJNIisw7Jdcd1AMheSPUOjMIwUhZxDWx_xkkEh80E2VW97dATSEVu46fay8v6c8fhuk0tpe8PUBvs9OMggNWxZ6-prHGRNrYZEjz7wX-wI14KEBmhVLbWf6EEw27Pu61FTxXxq-WdbKebNR9Cmd3fh5WL-XMBEtt_O_1okysx6WmS6vcyLnEUtCvUZtyYYbibn9LQxsXk_cNvDrHQOJn6PNXpWzkP6-1HW3nHHdqFoD59ttG268NfAhl057K0epKd7BcC8-9aYa0k7Sg&lib=MU_-YV2xVJ8Hbu2p8Q2W_mnzt3BApglEU";
+const PRODUCTS_API_URL = "https://script.google.com/macros/s/AKfycbwDSDeQNzeFHWBYH3CL6ScnBJweWgUkFyceQSepMQWTZB7MGaIFi_EqaMIkf2NKFbg3/exec";
 const GPT_BACKEND_URL  = "https://script.google.com/macros/s/AKfycbzerkNn7GThDFGVo1MW2iLVQd2_8UqtO6KQ81LLrSVrotnlIpRnkw6_1RoEMyXuMIjS/exec";
 
 let productData = [];
@@ -115,18 +121,34 @@ let SESSION_ID = (function () {
 
 // 1️⃣ Load product data
 window.onload = function() {
+    addBot("Loading products from sheet...");
     fetch(PRODUCTS_API_URL)
         .then(r => r.json())
         .then(data => {
             // Keep data as-is; backend will handle 2D or objects
             productData = data;
             let count = Array.isArray(data) ? data.length : 0;
-            addBot("Loaded " + count + " product rows from sheet. Ask anything about them.");
+
+            // Replace the "Loading..." bot message with final status
+            const lastBot = document.querySelector(".msg.bot:last-child");
+            if (lastBot && lastBot.textContent.indexOf("Loading products from sheet") !== -1) {
+                lastBot.remove();
+            }
+
+            addBot("✅ Loaded " + count + " product rows from your sheet.\n\n" +
+                   "You can ask things like:\n" +
+                   "• give me 3 racks above 3000 with sales count above 50\n" +
+                   "• top 5 sandwich makers by sales\n" +
+                   "• best selling electronics sorted by seller name");
             console.log("Loaded productData:", productData);
         })
         .catch((err) => {
             console.error("Product load error:", err);
-            addBot("Failed to load live products. Using demo data.");
+            const lastBot = document.querySelector(".msg.bot:last-child");
+            if (lastBot && lastBot.textContent.indexOf("Loading products from sheet") !== -1) {
+                lastBot.remove();
+            }
+            addBot("⚠️ Failed to load live products. Using small demo data.");
             productData = [
                 { "Product Name": "Samsung A54", "Price": "100000", "Category": "Mobiles" },
                 { "Product Name": "Nike Shoes", "Price": "15000", "Category": "Fashion" }
@@ -144,13 +166,12 @@ window.onload = function() {
 // Render bot messages with basic formatting
 function addBot(text) {
     const box = document.getElementById("chatBox");
-
     let formatted = text || "";
 
     // Remove markdown **bold** if GPT ever sends it
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1');
 
-    // Allow plain text + newlines, but block scripts
+    // Block scripts
     formatted = formatted
         .replace(/<script/gi, "&lt;script")
         .replace(/<\/script/gi, "&lt;/script")
@@ -170,6 +191,14 @@ function addUser(text) {
     box.scrollTop = box.scrollHeight;
 }
 
+// Small helper to disable/enable send button while waiting
+function setSending(state) {
+    const btn = document.getElementById("sendBtn");
+    const input = document.getElementById("userInput");
+    btn.disabled = state;
+    input.disabled = state;
+}
+
 // 2️⃣ Send user question + product data + sessionId to GPT backend
 async function sendMessage() {
     const input = document.getElementById("userInput");
@@ -180,6 +209,7 @@ async function sendMessage() {
     input.value = "";
 
     addBot("Thinking...");
+    setSending(true);
 
     try {
         const response = await fetch(GPT_BACKEND_URL, {
@@ -202,6 +232,7 @@ async function sendMessage() {
             // Remove "Thinking..."
             const lastBot = document.querySelector(".msg.bot:last-child");
             if (lastBot) lastBot.remove();
+            setSending(false);
             addBot("❌ Backend did not return valid JSON.<br><br>" + rawText);
             return;
         }
@@ -209,6 +240,7 @@ async function sendMessage() {
         // Remove "Thinking..."
         const lastBot = document.querySelector(".msg.bot:last-child");
         if (lastBot) lastBot.remove();
+        setSending(false);
 
         if (data.error) {
             addBot("❌ Error from server: " + data.error);
@@ -229,6 +261,7 @@ async function sendMessage() {
         console.error("Chat error:", err);
         const lastBot = document.querySelector(".msg.bot:last-child");
         if (lastBot) lastBot.remove();
+        setSending(false);
         addBot("❌ Network or server error: " + err.message);
     }
 }
