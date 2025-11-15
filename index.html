@@ -87,6 +87,16 @@ const GPT_BACKEND_URL  = "https://script.google.com/macros/s/AKfycbzerkNn7GThDFG
 
 let productData = [];
 
+// 🔑 Simple per-browser session ID (so backend can use CacheService per user)
+let SESSION_ID = (function () {
+    const KEY = "daraz_chatbot_session_id";
+    let existing = localStorage.getItem(KEY);
+    if (existing) return existing;
+    const newId = "sess_" + Date.now() + "_" + Math.random().toString(16).slice(2);
+    localStorage.setItem(KEY, newId);
+    return newId;
+})();
+
 // 1️⃣ Load product data
 window.onload = function() {
     fetch(PRODUCTS_API_URL)
@@ -147,7 +157,7 @@ function addUser(text) {
     box.scrollTop = box.scrollHeight;
 }
 
-// 2️⃣ Send user question + product data to GPT backend
+// 2️⃣ Send user question + product data + sessionId to GPT backend
 async function sendMessage() {
     const input = document.getElementById("userInput");
     const text = input.value.trim();
@@ -164,7 +174,8 @@ async function sendMessage() {
             // ❗ Important: no custom headers, Apps Script doesn't like CORS preflight
             body: JSON.stringify({
                 message: text,
-                productData: productData
+                productData: productData,
+                sessionId: SESSION_ID   // 🔥 this enables context in backend
             })
         });
 
