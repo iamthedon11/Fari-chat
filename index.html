@@ -66,7 +66,7 @@
         font-weight: bold;
     }
 
-    /* Optional: nicer dropdown styling */
+    /* Nicer dropdown styling */
     details {
         margin-bottom: 8px;
         background: #f8fafc;
@@ -147,10 +147,8 @@ function addBot(text) {
 
     let formatted = text || "";
 
-    // Clean some markdown-ish patterns (optional)
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1'); // remove **bold**
-    formatted = formatted.replace(/\n\d+\.\s/g, '\n• ');   // "1. " → "• "
-    formatted = formatted.replace(/\n-\s/g, '\n• ');       // "- " → "• "
+    // Remove markdown **bold** if GPT ever sends it
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '$1');
 
     // ❗ Allow HTML like <details>, <summary>, but block scripts
     formatted = formatted
